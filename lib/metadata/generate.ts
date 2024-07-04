@@ -1,4 +1,5 @@
 import type { ApiData, Metadata } from './types';
+import type { RouteParams } from 'nextjs/types';
 
 import type { Route } from 'nextjs-routes';
 
@@ -6,12 +7,13 @@ import config from 'configs/app';
 import getNetworkTitle from 'lib/networks/getNetworkTitle';
 
 import compileValue from './compileValue';
+import getCanonicalUrl from './getCanonicalUrl';
 import getPageOgType from './getPageOgType';
 import * as templates from './templates';
 
-export default function generate<R extends Route>(
-  route: R,
-  apiData?: ApiData<R>,
+export default function generate<Pathname extends Route['pathname']>(
+  route: RouteParams<Pathname>,
+  apiData: ApiData<Pathname> = null,
 ): Metadata {
   const params = {
     ...route.query,
@@ -43,5 +45,6 @@ export default function generate<R extends Route>(
         pageOgType !== 'Regular page' ? config.meta.og.description : '',
       imageUrl: pageOgType !== 'Regular page' ? config.meta.og.imageUrl : '',
     },
+    canonical: getCanonicalUrl(route.pathname),
   };
 }

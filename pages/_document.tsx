@@ -3,6 +3,7 @@ import type { DocumentContext } from 'next/document';
 import Document, { Html, Head, Main, NextScript } from 'next/document';
 import React from 'react';
 
+import logRequestFromBot from 'nextjs/utils/logRequestFromBot';
 import * as serverTiming from 'nextjs/utils/serverTiming';
 
 import theme from 'theme';
@@ -20,6 +21,8 @@ class MyDocument extends Document {
 
       return result;
     };
+
+    await logRequestFromBot(ctx.req, ctx.res, ctx.pathname);
 
     const initialProps = await Document.getInitialProps(ctx);
 
@@ -41,9 +44,10 @@ class MyDocument extends Document {
           />
 
           { /* eslint-disable-next-line @next/next/no-sync-scripts */ }
-          <script src="/envs.js"/>
+          <script src="/assets/envs.js"/>
 
           { /* FAVICON */ }
+
           <link rel="icon" href="/favicon/favicon.ico" sizes="48x48"/>
           <link
             rel="icon"

@@ -15,7 +15,7 @@ import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import GasUsedToTargetRatio from 'ui/shared/GasUsedToTargetRatio';
 import IconSvg from 'ui/shared/IconSvg';
-import LinkInternal from 'ui/shared/LinkInternal';
+import LinkInternal from 'ui/shared/links/LinkInternal';
 import TextSeparator from 'ui/shared/TextSeparator';
 import Utilization from 'ui/shared/Utilization/Utilization';
 
@@ -25,7 +25,7 @@ interface Props {
   enableTimeIncrement?: boolean;
 }
 
-const isRollup = config.features.optimisticRollup.isEnabled || config.features.zkEvmRollup.isEnabled;
+const isRollup = config.features.rollup.isEnabled;
 
 const BlocksTableItem = ({ data, isLoading, enableTimeIncrement }: Props) => {
   const totalReward = getBlockTotalReward(data);
@@ -50,7 +50,7 @@ const BlocksTableItem = ({ data, isLoading, enableTimeIncrement }: Props) => {
             <BlockEntity
               isLoading={ isLoading }
               number={ data.height }
-              hash={ data.type === 'reorg' ? data.hash : undefined }
+              hash={ data.type !== 'block' ? data.hash : undefined }
               noIcon
               fontSize="sm"
               lineHeight={ 5 }
@@ -70,6 +70,7 @@ const BlocksTableItem = ({ data, isLoading, enableTimeIncrement }: Props) => {
           <AddressEntity
             address={ data.miner }
             isLoading={ isLoading }
+            truncation="constant"
           />
         </Td>
       ) }
@@ -85,33 +86,33 @@ const BlocksTableItem = ({ data, isLoading, enableTimeIncrement }: Props) => {
           </Skeleton>
         ) : data.tx_count }
       </Td>
+      <Td fontSize="sm">
+        <Skeleton isLoaded={ !isLoading } display="inline-block">{ BigNumber(data.gas_used || 0).toFormat() }</Skeleton>
+        <Flex mt={ 2 }>
+          <Tooltip label={ isLoading ? undefined : 'Gas Used %' }>
+            <Box>
+              <Utilization
+                colorScheme="gray"
+                value={ BigNumber(data.gas_used || 0).dividedBy(BigNumber(data.gas_limit)).toNumber() }
+                isLoading={ isLoading }
+              />
+            </Box>
+          </Tooltip>
+          { data.gas_target_percentage && (
+            <>
+              <TextSeparator color={ separatorColor } mx={ 1 }/>
+              <GasUsedToTargetRatio value={ data.gas_target_percentage } isLoading={ isLoading }/>
+            </>
+          ) }
+        </Flex>
+      </Td>
       { !isRollup && !config.UI.views.block.hiddenFields?.total_reward && (
         <Td fontSize="sm">
-          <Skeleton isLoaded={ !isLoading } display="inline-block">{ BigNumber(data.gas_used || 0).toFormat() }</Skeleton>
-          <Flex mt={ 2 }>
-            <Tooltip label={ isLoading ? undefined : 'Gas Used %' }>
-              <Box>
-                <Utilization
-                  colorScheme="gray"
-                  value={ BigNumber(data.gas_used || 0).dividedBy(BigNumber(data.gas_limit)).toNumber() }
-                  isLoading={ isLoading }
-                />
-              </Box>
-            </Tooltip>
-            { data.gas_target_percentage && (
-              <>
-                <TextSeparator color={ separatorColor } mx={ 1 }/>
-                <GasUsedToTargetRatio value={ data.gas_target_percentage } isLoading={ isLoading }/>
-              </>
-            ) }
-          </Flex>
+          <Skeleton isLoaded={ !isLoading } display="inline-block">
+            { totalReward.toFixed(8) }
+          </Skeleton>
         </Td>
       ) }
-      <Td fontSize="sm">
-        <Skeleton isLoaded={ !isLoading } display="inline-block">
-          { totalReward.toFixed(8) }
-        </Skeleton>
-      </Td>
       { !isRollup && !config.UI.views.block.hiddenFields?.burnt_fees && (
         <Td fontSize="sm">
           <Flex alignItems="center" columnGap={ 2 }>
