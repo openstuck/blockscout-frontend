@@ -1,8 +1,8 @@
-import { MenuItem, chakra, useDisclosure } from '@chakra-ui/react';
+import { chakra, useDisclosure } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import React from 'react';
 
-import type { Route } from 'nextjs-routes';
+import type { ItemProps } from '../types';
 
 import config from 'configs/app';
 import useApiQuery from 'lib/api/useApiQuery';
@@ -11,13 +11,10 @@ import { PAGE_TYPE_DICT } from 'lib/mixpanel/getPageType';
 import AddressVerificationModal from 'ui/addressVerification/AddressVerificationModal';
 import IconSvg from 'ui/shared/IconSvg';
 
-interface Props {
-  className?: string;
-  hash: string;
-  onBeforeClick: (route: Route) => boolean;
-}
+import ButtonItem from '../parts/ButtonItem';
+import MenuItem from '../parts/MenuItem';
 
-const TokenInfoMenuItem = ({ className, hash, onBeforeClick }: Props) => {
+const TokenInfoMenuItem = ({ className, hash, onBeforeClick, type }: ItemProps) => {
   const router = useRouter();
   const modal = useDisclosure();
   const isAuth = useHasAccount();
@@ -61,37 +58,40 @@ const TokenInfoMenuItem = ({ className, hash, onBeforeClick }: Props) => {
     router.push({ pathname: '/account/verified-addresses' });
   }, [ router ]);
 
-  const icon = <IconSvg name="edit" boxSize={ 6 } mr={ 2 } p={ 1 }/>;
-
-  const content = (() => {
-    if (!verifiedAddressesQuery.data?.verifiedAddresses.find(({ contractAddress }) => contractAddress.toLowerCase() === hash.toLowerCase())) {
-      return (
-        <MenuItem className={ className } onClick={ handleAddAddressClick }>
-          { icon }
-          <span>{ tokenInfoQuery.data?.tokenAddress ? 'Update token info' : 'Add token info' }</span>
-        </MenuItem>
-      );
-    }
-
+  const element = (() => {
+    const icon = <IconSvg name="edit" boxSize={ 6 } p={ 1 }/>;
+    const isVerifiedAddress = verifiedAddressesQuery.data?.verifiedAddresses
+      .find(({ contractAddress }) => contractAddress.toLowerCase() === hash.toLowerCase());
     const hasApplication = applicationsQuery.data?.submissions.some(({ tokenAddress }) => tokenAddress.toLowerCase() === hash.toLowerCase());
 
-    return (
-      <MenuItem className={ className } onClick={ handleAddApplicationClick }>
-        { icon }
-        <span>
-          {
-            hasApplication || tokenInfoQuery.data?.tokenAddress ?
-              'Update token info' :
-              'Add token info'
-          }
-        </span>
-      </MenuItem>
-    );
+    const label = (() => {
+      if (!isVerifiedAddress) {
+        return tokenInfoQuery.data?.tokenAddress ? 'Update token info' : 'Add token info';
+      }
+
+      return hasApplication || tokenInfoQuery.data?.tokenAddress ? 'Update token info' : 'Add token info';
+    })();
+
+    const onClick = isVerifiedAddress ? handleAddApplicationClick : handleAddAddressClick;
+
+    switch (type) {
+      case 'button': {
+        return <ButtonItem label={ label } icon={ icon } onClick={ onClick } className={ className }/>;
+      }
+      case 'menu_item': {
+        return (
+          <MenuItem className={ className } onClick={ onClick }>
+            { icon }
+            <chakra.span ml={ 2 }>{ label }</chakra.span>
+          </MenuItem>
+        );
+      }
+    }
   })();
 
   return (
     <>
-      { content }
+      { element }
       <AddressVerificationModal
         defaultAddress={ hash }
         pageType={ PAGE_TYPE_DICT['/token/[hash]'] }
@@ -105,4 +105,4 @@ const TokenInfoMenuItem = ({ className, hash, onBeforeClick }: Props) => {
   );
 };
 
-export default React.memo(chakra(TokenInfoMenuItem));
+export default React.memo(TokenInfoMenuItem);
