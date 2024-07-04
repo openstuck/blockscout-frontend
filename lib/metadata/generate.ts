@@ -11,7 +11,10 @@ import getCanonicalUrl from './getCanonicalUrl';
 import getPageOgType from './getPageOgType';
 import * as templates from './templates';
 
-export default function generate<Pathname extends Route['pathname']>(route: RouteParams<Pathname>, apiData: ApiData<Pathname> = null): Metadata {
+export default function generate<Pathname extends Route['pathname']>(
+  route: RouteParams<Pathname>,
+  apiData: ApiData<Pathname> = null,
+): Metadata {
   const params = {
     ...route.query,
     ...apiData,
@@ -19,8 +22,17 @@ export default function generate<Pathname extends Route['pathname']>(route: Rout
     network_title: getNetworkTitle(),
   };
 
-  const title = compileValue(templates.title.make(route.pathname, Boolean(apiData)), params);
-  const description = compileValue(templates.description.make(route.pathname), params);
+  const compiledTitle = compileValue(
+    templates.title.make(route.pathname),
+    params,
+  );
+  const title = compiledTitle ?
+    compiledTitle + (config.meta.promoteBlockscoutInTitle ? '' : '') :
+    '';
+  const description = compileValue(
+    templates.description.make(route.pathname),
+    params,
+  );
 
   const pageOgType = getPageOgType(route.pathname);
 
@@ -29,7 +41,8 @@ export default function generate<Pathname extends Route['pathname']>(route: Rout
     description,
     opengraph: {
       title: title,
-      description: pageOgType !== 'Regular page' ? config.meta.og.description : '',
+      description:
+        pageOgType !== 'Regular page' ? config.meta.og.description : '',
       imageUrl: pageOgType !== 'Regular page' ? config.meta.og.imageUrl : '',
     },
     canonical: getCanonicalUrl(route.pathname),
